@@ -6,7 +6,7 @@ app = Flask(__name__)
 @app.get("/ping")
 def ping():
     host = request.args.get("host", "")
-    output = subprocess.check_output("ping -c 1 " + host, shell=True)
+    output = subprocess.check_output(["ping", "-c", "1", host])
     return output
 
 @app.get("/")

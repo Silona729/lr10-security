@@ -1,0 +1,30 @@
+name: security
+on: [push, pull_request]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SAST (semgrep)
+        continue-on-error: true
+        run: pipx run semgrep scan --config auto --error .
+
+      - name: SCA (pip-audit)
+        continue-on-error: true
+        run: pipx run pip-audit -r requirements.txt
+
+      - name: Secrets (gitleaks)
+        continue-on-error: true
+        run: docker run --rm -v "$PWD":/repo zricethezav/gitleaks:latest git /repo -v
+
+      - name: DAST (zap-baseline)
+        continue-on-error: true
+        run: |
+          pip install -r requirements.txt
+          nohup python app.py &
+          sleep 6
+          docker run --rm --network host ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:8000 -I
